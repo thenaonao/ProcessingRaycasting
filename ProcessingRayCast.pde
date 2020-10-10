@@ -10,7 +10,7 @@ int rayTestY;
 int frame;
 float lagMultiplier=1;
 void setup(){
-  frameRate(20000); //Like Doom, doom works in 35 tics
+  frameRate(60); //Like Doom, doom works in 35 tics
   size(1280,720);
   background(0,0,0);
   px=8;
