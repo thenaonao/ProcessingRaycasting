@@ -1,9 +1,6 @@
-float px,py,pz;
-float playerAngle;
+float px,py,pz,playerAngle;
 float fov = 3.14159f/4.0f;
 float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
-float oldMouseY,diffY; //Well I tried to use the mouse to move the cameray in the y axis, but I need the acceleration on y axis of  the mouse instead of a substraction between 2 points, so its unused
-float yAdder; //For the keyboard, Unused
 
 String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
 /*################.............##.............##.............##.............##.............##.............##.............##.............################*/
@@ -23,8 +20,7 @@ void setup(){
   hauteur=10;
 }
 
-void draw(){
-  //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
+void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
   loadPixels();
   for(int j=0;j<width;j++){
     for(int k=0;k<(height/2-1);k++){
@@ -59,10 +55,9 @@ void draw(){
         }
       }
     }
-   //distanceToTheWall*=cos(distanceToTheWall); //Tried to limit the fisheye effect, so one under this line is the good one.
-     distanceToTheWall*=cos(rayAngle-playerAngle); 
+    distanceToTheWall*=cos(rayAngle-playerAngle); //Tried to limit the fisheye effect
     
-    if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiplie the rotate by 4 when its lagging so we can get the view out of there faster.
+    if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiply the rotate by 4 when its lagging so we can get the view out of there faster.
       lagMultiplier=4.0f;
     }else{
       lagMultiplier=1.0f;
