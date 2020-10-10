@@ -22,15 +22,6 @@ void setup(){
   largeur=15;
   hauteur=10;
 }
-float clamp(float a, float b, float c){
-  if(a < b){
-    return b;
-  }else if(a>c){
-    return c;
-  }else{
-    return a;
-  }
-}
 
 void draw(){
   //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
