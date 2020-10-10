@@ -1,11 +1,11 @@
 float px,py,pz;
 float playerAngle;
 float fov = 3.14159f/4.0f;
-float depthOfView = 16.0f; //car on a 15 de longueur, mais si jamais il n'y a pas de bordure exterieur, ca permet de limiter et d'eviter une boucle infinie
-float oldMouseY,diffY; //J'ai essayé de faire ca avec la souris pour bouger la camera juste sur un axe Y, mais ca marche pas trop, car je prends des valeurs en 2 points, et il me faudrait l'acceleration de la souris sur l'axe Y
-float yAdder; //Pour le clavier du coup
+float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
+float oldMouseY,diffY; //Well I tried to use the mouse to move the cameray in the y axis, but I need the acceleration on y axis of  the mouse instead of a substraction between 2 points, so its unused
+float yAdder; //For the keyboard, Unused
 
-String map = "################.............##.............##.............##.............##.............##.............##.............##.............################";
+String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
 /*
 ###############
 #.............#
@@ -18,21 +18,31 @@ String map = "################.............##.............##.............##.....
 #.............#
 ###############
 */
-int largeur,hauteur;
+int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 int rayTestX;
 int rayTestY;
-//boolean collision=false; //oui j'ai pas d'autre idée car ce n'est pas dans la fonction draw, du coup j'ai pas access a certaines variables nécessaires pour faire le test de collision, du coup, on va mettre un flag sur le ray du milieu et si c'est inferieur a 1.0f alors ce sera true et donc collision vu dans la fonction keypressed
+
 int frame;
 float lagMultiplier=1;
 void setup(){
-  frameRate(35); //un peu comme doom XD
+  frameRate(35); //Like Doom, doom works in 35 tics
   size(1280,720);
   background(0,0,0);
-  px=2;
-  py=2;
+  px=8;
+  py=1;
   pz=0;
   largeur=15;
   hauteur=10;
+}
+
+float clamp(float a, float b, float c){
+  if(a < b){
+    return b;
+  }else if(a>c){
+    return c;
+  }else{
+    return a;
+  }
 }
 
 void draw(){
@@ -45,8 +55,8 @@ void draw(){
   loadPixels();
   for(int j=0;j<width;j++){
     for(int k=0;k<(height/2-1);k++){
-      pixels[k*width+j]=color(8,16,(height/2-k)*255/(height/2));
-      pixels[(k+height/2)*width+j]=color( 255-(height/2-k)*255/(height/2)   ,0,0);
+      pixels[k*width+j]=color(8,16,(height/2-k)*240/(height/2));
+      pixels[(k+height/2)*width+j]=color( 255-(height/2-k)*240/(height/2)   ,0,0);
     }
   }
   updatePixels();
@@ -63,14 +73,15 @@ void draw(){
     float eyeY = cos(rayAngle);
     
     while(!rayHitWall && distanceToTheWall < depthOfView){
-      distanceToTheWall += 0.01f;
+      distanceToTheWall += 0.001f;
       
       rayTestX = (int)(px + eyeX * distanceToTheWall);
       rayTestY = (int)(py + eyeY * distanceToTheWall);
       
-      if(rayTestX < 0 || rayTestX >= largeur+1 || rayTestY < 0 || rayTestY >=hauteur+1){
-          rayHitWall =true; // ca sert a rien de continuer, car y'a rien a dessiner
+      if(rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur){
+          rayHitWall =true; //No need to continue, because there is no wall to hit  
           distanceToTheWall = depthOfView;
+          println("A");
       }else{
         if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
             rayHitWall = true;
@@ -78,38 +89,26 @@ void draw(){
       }
       
     }
-    println(distanceToTheWall);
-      //distanceToTheWall*=cos(distanceToTheWall); //On essaie de limiter l'effect eyefish
+      //distanceToTheWall*=cos(distanceToTheWall); //Tried to limit the fisheye effect, so one under this line is the good one.
  
-      distanceToTheWall*=cos(rayAngle-playerAngle);
-
-    /* non utilisé
-    if(i==width/2){ //Donc si c'est la ray du milieu et que distanceToTheWall< 1.0f alors collision == true, on fait 2 if, car si on le fait check en 1 seul fois, ce sera false pour les ray d'apres... 1.0f semble etre trop grand, donc 0.25f semble meilleur
-      if(distanceToTheWall<0.25f){
-        collision = true;
-      }else{
-        collision = false;
-      }
-    }*/
+     distanceToTheWall*=cos(rayAngle-playerAngle); 
     
-    
-    if(distanceToTheWall<=1.0f){
+    if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiplie the rotate by 4 when its lagging so we can get the view out of there faster.
       lagMultiplier=4.0f;
     }else{
       lagMultiplier=1.0f;
     }
     
-    //On dessine la ray
-    int halfWallHeight =(int) ((16-(distanceToTheWall-1))*height)/32; //32 car 16*2 on divise par 16 car regle de 3 pour scale a l'ecran et 2 car on en veut la moitié
-    int restantPixel = 360-halfWallHeight;
-    int nuance = (int) (16-distanceToTheWall)*255/16; 
+    //We draw the ray (the wall in fact)
+    int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS
+    if(i==0){
+      println(distanceToTheWall);
+    }
+    
+    float nuance =(15-distanceToTheWall-2)*255/15; 
     stroke(nuance);
-    //line(i,(height/2)-1-halfWallHeight,      i,(height/2)-1+halfWallHeight);
-    line(i, restantPixel,    i, height-restantPixel);
-    //println(i);
+    line(i, halfWallHeight,    i, height-halfWallHeight);
   }
-  
-  //playerAngle+=diffY/10;
 }
 
 
@@ -119,7 +118,7 @@ void keyPressed() {
       playerAngle+= 0.02f*lagMultiplier;
     } else if (keyCode == LEFT) {
       playerAngle+= -0.02f*lagMultiplier;
-    } else if (keyCode == UP){ //On utilise les angles d'euler pour bouger dans l'espace 2D car l'angle differe, on veut bouger dans la direction de l'angle et non pas de l'array
+    } else if (keyCode == UP){ //We use Euler angle to move in the false 3D space, in fact its just a 2D space... But we want to move in the direction of the player, not based on the axis of the array of the map....
       px+= 0.2f*sin(playerAngle);
       py+= 0.2f*cos(playerAngle);
       if(map.charAt((int)py*largeur+ (int)px) == '#'){
