@@ -6,22 +6,10 @@ float oldMouseY,diffY; //Well I tried to use the mouse to move the cameray in th
 float yAdder; //For the keyboard, Unused
 
 String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
-/*
-###############
-#.............#
-#.............#
-#.............#
-#.............#
-#.............#
-#.............#
-#.............#
-#.............#
-###############
-*/
+/*################.............##.............##.............##.............##.............##.............##.............##.............################*/
 int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 int rayTestX;
 int rayTestY;
-
 int frame;
 float lagMultiplier=1;
 void setup(){
@@ -34,7 +22,6 @@ void setup(){
   largeur=15;
   hauteur=10;
 }
-
 float clamp(float a, float b, float c){
   if(a < b){
     return b;
@@ -47,11 +34,6 @@ float clamp(float a, float b, float c){
 
 void draw(){
   //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
-  /*fill(32,48,232);//Ceiling will be blue colored
-  rect(0,0,width,(height/2)-1);//First rectangle for ceiling
-  fill(203,65,84);
-  rect(0,(height/2)-1,width,height-1); //We have some minus 1 because we draw outside of the screen..
-  */
   loadPixels();
   for(int j=0;j<width;j++){
     for(int k=0;k<(height/2-1);k++){
@@ -60,8 +42,6 @@ void draw(){
     }
   }
   updatePixels();
-  
-  
   //Raycast
   strokeWeight(1);
   for(int i=0;i<width-1;i++){
@@ -87,10 +67,8 @@ void draw(){
             rayHitWall = true;
         }
       }
-      
     }
-      //distanceToTheWall*=cos(distanceToTheWall); //Tried to limit the fisheye effect, so one under this line is the good one.
- 
+   //distanceToTheWall*=cos(distanceToTheWall); //Tried to limit the fisheye effect, so one under this line is the good one.
      distanceToTheWall*=cos(rayAngle-playerAngle); 
     
     if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiplie the rotate by 4 when its lagging so we can get the view out of there faster.
@@ -110,7 +88,6 @@ void draw(){
     line(i, halfWallHeight,    i, height-halfWallHeight);
   }
 }
-
 
 void keyPressed() {
   if (key == CODED) {
@@ -134,14 +111,4 @@ void keyPressed() {
       }
     }
   } 
-}
-
-void keyReleased() {
-  yAdder = 0.0f;
-}
-
-
-void mouseMoved(){
-  diffY = mouseY - oldMouseY;
-  oldMouseY = mouseY;
 }
