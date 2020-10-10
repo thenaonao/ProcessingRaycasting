@@ -10,7 +10,7 @@ int rayTestY;
 int frame;
 float lagMultiplier=1;
 void setup(){
-  frameRate(35); //Like Doom, doom works in 35 tics
+  frameRate(20000); //Like Doom, doom works in 35 tics
   size(1280,720);
   background(0,0,0);
   px=8;
@@ -31,7 +31,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   updatePixels();
   //Raycast
   strokeWeight(1);
-  for(int i=0;i<width-1;i++){
+  for(int i=0;i<width;i++){
     float rayAngle = (playerAngle - fov/2) + ( (float)i / (float)width) * fov;
     float distanceToTheWall = 0;
     boolean rayHitWall = false;
@@ -64,11 +64,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     }
     
     //We draw the ray (the wall in fact)
-    int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS
-    if(i==0){
-      println(distanceToTheWall);
-    }
-    
+    int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
     float nuance =(15-distanceToTheWall-2)*255/15; 
     stroke(nuance);
     line(i, halfWallHeight,    i, height-halfWallHeight);
