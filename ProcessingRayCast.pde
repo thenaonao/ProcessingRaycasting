@@ -18,6 +18,11 @@ float oldAcceleration;
 boolean wasOut=false;
 int windowX, windowY, absMouseX, absMouseY;
 
+//Multiple key support
+boolean bLeft,bRight,bForward,bBackward;
+
+
+
 
 //Maps
 String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
@@ -26,6 +31,38 @@ String map = "################.............##.............##.....#.......##.....
 //Debug
 int frame;
 float lagMultiplier=1;
+
+
+
+
+
+//Base functions
+
+int clamp(int a,int b,int c){
+  if(a<b)return b;
+  if(a>c)return c;
+  return a;
+}
+
+void setBoolMove(int keyNumb, boolean b){
+  switch(keyNumb){
+    case 'z':
+    case 'w':
+      bForward=b;
+      break;
+    case 's':
+      bBackward=b;
+      break;
+    case 'q':
+    case 'a':
+      bLeft=b;
+      break;
+    case 'd':
+      bRight=b;
+      break;
+  }
+}
+
 
 
 
@@ -42,13 +79,17 @@ void setup(){
   hauteur=10;
 }
 
-int clamp(int a,int b,int c){
-  if(a<b)return b;
-  if(a>c)return c;
-  return a;
-}
-
 void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
+
+  //DRAWING
+  //
+  //
+  //
+  //
+  //
+  //
+  
+  
   loadPixels();
   for(int j=0;j<width;j++){
     for(int k=0;k<(height/2-1);k++){
@@ -102,6 +143,13 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   updatePixels();  
   
   //Mouse support, only 1 axis 
+  //
+  //
+  //
+  //
+  //
+  
+  
   float mouseXAcceleration=0;
   MouseInfo.getPointerInfo();
   Point pt = MouseInfo.getPointerInfo().getLocation();
@@ -146,6 +194,48 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   oldMouseX=absMouseX;
   oldAcceleration=mouseXAcceleration;
   wasOut=false;
+  
+  
+  //PLAYER MOVEMENTS
+  //
+  //
+  //
+  //
+  //
+  
+  if(bLeft){
+      px-= 0.2f*sin(playerAngle+90);
+      py-= 0.2f*cos(playerAngle+90);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px+= 0.2f*sin(playerAngle+90);
+        py+= 0.2f*cos(playerAngle+90);
+      }
+  }
+  if(bRight){
+      px-= 0.2f*sin(playerAngle-90);
+      py-= 0.2f*cos(playerAngle-90);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px+= 0.2f*sin(playerAngle-90);
+        py+= 0.2f*cos(playerAngle-90);
+      }
+  }
+  if(bForward){
+    px+= 0.2f*sin(playerAngle);
+    py+= 0.2f*cos(playerAngle);
+    if(map.charAt((int)py*largeur+ (int)px) == '#'){
+      px-= 0.2f*sin(playerAngle);
+      py-= 0.2f*cos(playerAngle);
+    }
+  }
+  if(bBackward){
+    px-= 0.2f*sin(playerAngle);
+    py-= 0.2f*cos(playerAngle);
+    if(map.charAt((int)py*largeur+ (int)px) == '#'){
+      px+= 0.2f*sin(playerAngle);
+      py+= 0.2f*cos(playerAngle);
+    }
+  }
+  
 }
 
 void keyPressed() {
@@ -172,35 +262,14 @@ void keyPressed() {
       exit();
     }
   }else{
-    if(key=='z' || key == 'w'){
-      px+= 0.2f*sin(playerAngle);
-      py+= 0.2f*cos(playerAngle);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px-= 0.2f*sin(playerAngle);
-        py-= 0.2f*cos(playerAngle);
-      }
-    }else if(key == 's'){
-      px-= 0.2f*sin(playerAngle);
-      py-= 0.2f*cos(playerAngle);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle);
-        py+= 0.2f*cos(playerAngle);
-      }
-    }else if(key == 'q' || key=='a'){
-      px-= 0.2f*sin(playerAngle+90);
-      py-= 0.2f*cos(playerAngle+90);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle+90);
-        py+= 0.2f*cos(playerAngle+90);
-      }
-    }else if(key == 'd'){
-      px-= 0.2f*sin(playerAngle-90);
-      py-= 0.2f*cos(playerAngle-90);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle-90);
-        py+= 0.2f*cos(playerAngle-90);
-      }
-    }
-    
+    setBoolMove(key,true);    
   }
 }
+
+void keyReleased() {
+  if(key!=CODED){
+    setBoolMove(key,false);
+  }
+}
+
+
