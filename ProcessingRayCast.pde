@@ -20,6 +20,12 @@ void setup(){
   hauteur=10;
 }
 
+int clamp(int a,int b,int c){
+  if(a<b)return b;
+  if(a>c)return c;
+  return a;
+}
+
 void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
   loadPixels();
   for(int j=0;j<width;j++){
@@ -28,7 +34,6 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
       pixels[(k+height/2)*width+j]=color( 255-(height/2-k)*240/(height/2)   ,0,0);
     }
   }
-  updatePixels();
   //Raycast
   strokeWeight(1);
   for(int i=0;i<width;i++){
@@ -66,9 +71,13 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     //We draw the ray (the wall in fact)
     int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
     float nuance =(15-distanceToTheWall-2)*255/15; 
-    stroke(nuance);
-    line(i, halfWallHeight,    i, height-halfWallHeight);
+    halfWallHeight=clamp(halfWallHeight,0,height);
+
+    for(int j=halfWallHeight;j<height-halfWallHeight;j++){
+      pixels[j*width+i]=color(nuance);
+    }   
   }
+  updatePixels();
 }
 
 void keyPressed() {
