@@ -1,20 +1,42 @@
+import java.awt.Robot;
+import java.awt.AWTException;
+import java.awt.Point;
+import java.awt.MouseInfo;
+ 
+
 float px,py,pz,playerAngle;
 float fov = 3.14159f/4.0f;
 float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
 
-String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
-/*################.............##.............##.............##.............##.............##.............##.............##.............################*/
 int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 int rayTestX;
 int rayTestY;
+
+//Mouse support
+int oldMouseX=0;
+float oldAcceleration;
+boolean wasOut=false;
+int windowX, windowY, absMouseX, absMouseY;
+
+
+//Maps
+String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
+/*################.............##.............##.............##.............##.............##.............##.............##.............################*/
+
+//Debug
 int frame;
 float lagMultiplier=1;
+
+
+
 void setup(){
-  frameRate(60); //Like Doom, doom works in 35 tics
+  frameRate(35); //Like Doom, doom works in 35 tics
   size(1280,720);
+  //fullScreen();
+  //noCursor();
   background(0,0,0);
   px=8;
-  py=1;
+  py=1.5;
   pz=0;
   largeur=15;
   hauteur=10;
@@ -73,11 +95,57 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     float nuance =(15-distanceToTheWall-2)*255/15; 
     halfWallHeight=clamp(halfWallHeight,0,height);
 
-    for(int j=halfWallHeight;j<height-halfWallHeight;j++){
+    for(int j=halfWallHeight;j<height-halfWallHeight;j++){ //So, for each column, we draw pixel column of the wall
       pixels[j*width+i]=color(nuance);
     }   
   }
-  updatePixels();
+  updatePixels();  
+  
+  //Mouse support, only 1 axis 
+  float mouseXAcceleration=0;
+  MouseInfo.getPointerInfo();
+  Point pt = MouseInfo.getPointerInfo().getLocation();
+  absMouseX = (int)pt.getX();
+  absMouseY = (int)pt.getY();
+  if(mouseX > 50 && mouseX < width-50 && mouseY > 50 && mouseY < height-50
+                  && abs(mouseX-pmouseX) == 0 && abs(mouseY-pmouseY) == 0) {
+    windowX = (int)(absMouseX-mouseX);
+    windowY = (int)(absMouseY-mouseY);
+  }
+  int x = -1, y = -1;
+  
+  mouseXAcceleration = (absMouseX-oldMouseX)/448.0;//So what we have here, is the speed, or the current vector from point oldMouseX to the current mouseX
+  
+  if(absMouseX < windowX)
+    x = windowX;
+  else if(absMouseX > windowX+width)
+    x = windowX + width;
+  if(absMouseY < windowY)
+    y = windowY;
+  else if(absMouseY > windowY+height)
+    y = windowY + height;
+  if(!(x == -1 && y == -1))
+    try {
+      Robot bot = new Robot();
+      bot.mouseMove(x == -1 ? absMouseX : x, y == -1 ? absMouseY : y);
+      wasOut=true;
+      
+    }
+  catch (AWTException e) {}
+  
+  if(!wasOut){
+    //if((mouseXAcceleration < 0 && oldAcceleration < 0) || (mouseXAcceleration > 0 && oldAcceleration > 0))
+      playerAngle+=mouseXAcceleration;
+  }else{
+    if(absMouseX<windowX){
+      playerAngle+=(absMouseX-windowX)/448.0;
+    }else if(absMouseX > windowX+width){
+      playerAngle+=(absMouseX-(windowX+width))/448.0; //Here, thats some shitty trickery
+    }
+  }
+  oldMouseX=absMouseX;
+  oldAcceleration=mouseXAcceleration;
+  wasOut=false;
 }
 
 void keyPressed() {
@@ -100,6 +168,39 @@ void keyPressed() {
         px+= 0.2f*sin(playerAngle);
         py+= 0.2f*cos(playerAngle);
       }
+    }else if(keyCode == ESC){
+      exit();
     }
-  } 
+  }else{
+    if(key=='z' || key == 'w'){
+      px+= 0.2f*sin(playerAngle);
+      py+= 0.2f*cos(playerAngle);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px-= 0.2f*sin(playerAngle);
+        py-= 0.2f*cos(playerAngle);
+      }
+    }else if(key == 's'){
+      px-= 0.2f*sin(playerAngle);
+      py-= 0.2f*cos(playerAngle);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px+= 0.2f*sin(playerAngle);
+        py+= 0.2f*cos(playerAngle);
+      }
+    }else if(key == 'q' || key=='a'){
+      px-= 0.2f*sin(playerAngle+90);
+      py-= 0.2f*cos(playerAngle+90);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px+= 0.2f*sin(playerAngle+90);
+        py+= 0.2f*cos(playerAngle+90);
+      }
+    }else if(key == 'd'){
+      px-= 0.2f*sin(playerAngle-90);
+      py-= 0.2f*cos(playerAngle-90);
+      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+        px+= 0.2f*sin(playerAngle-90);
+        py+= 0.2f*cos(playerAngle-90);
+      }
+    }
+    
+  }
 }
