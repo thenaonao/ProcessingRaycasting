@@ -3,14 +3,15 @@ import java.awt.AWTException;
 import java.awt.Point;
 import java.awt.MouseInfo;
  
-
 float px,py,pz,playerAngle;
-float fov = 3.14159f/4.0f;
+float fov = PI/4.0f;
 float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
 
 int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 int rayTestX;
 int rayTestY;
+
+float SPEED = 0.65f;
 
 //Mouse support
 int oldMouseX=0;
@@ -21,7 +22,7 @@ int windowX, windowY, absMouseX, absMouseY;
 //Multiple key support
 boolean bLeft,bRight,bForward,bBackward;
 
-
+boolean bIsFiring;
 
 
 //Maps
@@ -124,12 +125,12 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
       }
     }
     distanceToTheWall*=cos(rayAngle-playerAngle); //Tried to limit the fisheye effect
-    
+    /*
     if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiply the rotate by 4 when its lagging so we can get the view out of there faster.
       lagMultiplier=4.0f;
     }else{
       lagMultiplier=1.0f;
-    }
+    }*/
     
     //We draw the ray (the wall in fact)
     int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
@@ -141,6 +142,9 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     }   
   }
   updatePixels();  
+  
+  
+  
   
   //Mouse support, only 1 axis 
   //
@@ -204,61 +208,42 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   //
   
   if(bLeft){
-      px-= 0.2f*sin(playerAngle+90);
-      py-= 0.2f*cos(playerAngle+90);
+      px-= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+      py-= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle+90);
-        py+= 0.2f*cos(playerAngle+90);
+        px+= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+        py+= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       }
   }
   if(bRight){
-      px-= 0.2f*sin(playerAngle-90);
-      py-= 0.2f*cos(playerAngle-90);
+      px+= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+      py+= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle-90);
-        py+= 0.2f*cos(playerAngle-90);
+        px-= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+        py-= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       }
   }
   if(bForward){
-    px+= 0.2f*sin(playerAngle);
-    py+= 0.2f*cos(playerAngle);
+    px+= 0.2f*sin(playerAngle)*SPEED;
+    py+= 0.2f*cos(playerAngle)*SPEED;
     if(map.charAt((int)py*largeur+ (int)px) == '#'){
-      px-= 0.2f*sin(playerAngle);
-      py-= 0.2f*cos(playerAngle);
+      px-= 0.2f*sin(playerAngle)*SPEED;
+      py-= 0.2f*cos(playerAngle)*SPEED;
     }
   }
   if(bBackward){
-    px-= 0.2f*sin(playerAngle);
-    py-= 0.2f*cos(playerAngle);
+    px-= 0.2f*sin(playerAngle)*SPEED;
+    py-= 0.2f*cos(playerAngle)*SPEED;
     if(map.charAt((int)py*largeur+ (int)px) == '#'){
-      px+= 0.2f*sin(playerAngle);
-      py+= 0.2f*cos(playerAngle);
+      px+= 0.2f*sin(playerAngle)*SPEED;
+      py+= 0.2f*cos(playerAngle)*SPEED;
     }
   }
-  
 }
 
 void keyPressed() {
   if (key == CODED) {
-    if (keyCode == RIGHT) {
-      playerAngle+= 0.02f*lagMultiplier;
-    } else if (keyCode == LEFT) {
-      playerAngle+= -0.02f*lagMultiplier;
-    } else if (keyCode == UP){ //We use Euler angle to move in the false 3D space, in fact its just a 2D space... But we want to move in the direction of the player, not based on the axis of the array of the map....
-      px+= 0.2f*sin(playerAngle);
-      py+= 0.2f*cos(playerAngle);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px-= 0.2f*sin(playerAngle);
-        py-= 0.2f*cos(playerAngle);
-      }
-    } else if(keyCode == DOWN){
-      px-= 0.2f*sin(playerAngle);
-      py-= 0.2f*cos(playerAngle);
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
-        px+= 0.2f*sin(playerAngle);
-        py+= 0.2f*cos(playerAngle);
-      }
-    }else if(keyCode == ESC){
+    if(keyCode == ESC){
       exit();
     }
   }else{
@@ -272,4 +257,11 @@ void keyReleased() {
   }
 }
 
+void mousePressed(){
+  bIsFiring=true;
+}
+
+void mouseReleased(){
+  bIsFiring=false;
+}
 
