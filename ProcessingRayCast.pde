@@ -11,9 +11,7 @@ float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wal
 int rayTestX;
 int rayTestY;
 
-//CONST
 float SPEED = 0.65f;
-float INTEPSILON = 0.0075f;
 
 //Mouse support
 int oldMouseX=0;
@@ -28,46 +26,15 @@ boolean bIsFiring;
 
 
 //Maps
-String map = "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........##................###.........##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................###############################";
+String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
 /*################.............##.............##.............##.............##.............##.............##.............##.............################*/
-/*
-##############################
-#...#...#...#....#.#.........#
-#...#...#...#....#.#.........#
-#...##.###.#######.###########
-#.............#........#.....#
-#............................#
-#.............#........#.....#
-#...##.###.#######.#######.###
-#...#...#.....#..#.#.........#
-#...#...#.....#..#.#.........#
-###############..#.#.........#
-#................###.........#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
-##############################
-*/
 int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 
 //Debug
 int frame;
 float lagMultiplier=1;
 
+int i=0,j=0,k=0;
 
 
 
@@ -100,17 +67,19 @@ void setBoolMove(int keyNumb, boolean b){
 }
 
 
+
+
 void setup(){
-  frameRate(35); //Like Doom, doom works in 35 tics
+  frameRate(30); //Like Doom, doom works in 35 tics
   size(1280,720);
   //fullScreen();
   //noCursor();
   background(0,0,0);
-  px=5;
+  px=4;
   py=2;
   pz=0;
-  largeur=30;
-  hauteur=30;
+  largeur=15;
+  hauteur=10;
 }
 
 void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
@@ -125,67 +94,65 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   
   
   loadPixels();
-  for(int j=0;j<width;j++){
+  if(j<width){
     for(int k=0;k<(height/2-1);k++){
       pixels[k*width+j]=color(8,16,(height/2-k)*240/(height/2));
       pixels[(k+height/2)*width+j]=color( 255-(height/2-k)*240/(height/2)   ,0,0);
     }
-  }
-  //Raycast
-  strokeWeight(1);
-  for(int i=0;i<width;i++){
-    float rayAngle = (playerAngle - fov/2) + ( (float)i / (float)width) * fov;
-    float distanceToTheWall = 0;
-    boolean rayHitWall = false;
-    boolean isAnEdge=false;
-    //float recti=0;
-    float eyeX = sin(rayAngle);
-    float eyeY = cos(rayAngle);
-    
-    while(!rayHitWall && distanceToTheWall < depthOfView){
-      distanceToTheWall += 0.001f;
+    j++;
+  }else{
+    println(i);
+      //Raycast
+    strokeWeight(1);
+    if(i<width){
+      float rayAngle = (playerAngle - fov/2) + ( (float)i / (float)width) * fov;
+      float distanceToTheWall = 0;
+      boolean rayHitWall = false;
+      //float recti=0;
+      float eyeX = sin(rayAngle);
+      float eyeY = cos(rayAngle);
       
-      rayTestX = (int)(px + eyeX * distanceToTheWall);
-      rayTestY = (int)(py + eyeY * distanceToTheWall);
-      
-      if(rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur){
-          rayHitWall = true; //No need to continue, because there is no wall to hit  
-          distanceToTheWall = depthOfView;
-      }else{
-        if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
-            rayHitWall = true;
-            
-            if((rayTestX-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= rayTestX+INTEPSILON) || ((rayTestX+1)-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= (rayTestX+1)+INTEPSILON) ){
-              if((rayTestY-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= rayTestY+INTEPSILON) || ((rayTestY+1)-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= (rayTestY+1)+INTEPSILON) ){
-                isAnEdge=true;
-              }
-            }
-           
+      while(!rayHitWall && distanceToTheWall < depthOfView){
+        distanceToTheWall += 0.001f;
+        
+        rayTestX = (int)(px + eyeX * distanceToTheWall);
+        rayTestY = (int)(py + eyeY * distanceToTheWall);
+        
+        if(rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur){
+            rayHitWall =true; //No need to continue, because there is no wall to hit  
+            distanceToTheWall = depthOfView;
+        }else{
+          if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
+              rayHitWall = true;
+          }
         }
       }
-    }
-    distanceToTheWall*=cos(rayAngle-playerAngle); //Tried to limit the fisheye effect
-    /*
-    if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiply the rotate by 4 when its lagging so we can get the view out of there faster.
-      lagMultiplier=4.0f;
+      distanceToTheWall*=cos(rayAngle-playerAngle); //Tried to limit the fisheye effect
+      /*
+      if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiply the rotate by 4 when its lagging so we can get the view out of there faster.
+        lagMultiplier=4.0f;
+      }else{
+        lagMultiplier=1.0f;
+      }*/
+      
+      //We draw the ray (the wall in fact)
+      int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
+      float nuance =(15-distanceToTheWall-2)*255/15; 
+      halfWallHeight=clamp(halfWallHeight,0,height);
+  
+      for(int m=halfWallHeight;m<height-halfWallHeight;m++){ //So, for each column, we draw pixel column of the wall
+        pixels[m*width+i]=color(nuance);
+       
+      } 
+       i++;
     }else{
-      lagMultiplier=1.0f;
-    }*/
+      i=0;
+      j=0;
+    }
     
-    //We draw the ray (the wall in fact)
-    int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
-    float nuance =(15-distanceToTheWall-2)*255/15; 
-    halfWallHeight=clamp(halfWallHeight,0,height);
-
-    for(int j=halfWallHeight;j<height-halfWallHeight;j++){ //So, for each column, we draw pixel column of the wall
-      if(isAnEdge){
-        pixels[j*width+i]=color(0,255,0);
-      }
-      else{
-        pixels[j*width+i]=color(nuance);
-      }
-    }   
+    
   }
+  
   updatePixels();  
   
   
