@@ -7,11 +7,13 @@ float px,py,pz,playerAngle;
 float fov = PI/4.0f;
 float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
 
-int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
+
 int rayTestX;
 int rayTestY;
 
+//CONST
 float SPEED = 0.65f;
+float INTEPSILON = 0.0075f;
 
 //Mouse support
 int oldMouseX=0;
@@ -26,8 +28,41 @@ boolean bIsFiring;
 
 
 //Maps
-String map = "################.............##.............##.....#.......##.....#.......##.....###.....##.............##.............##.............################";
+String map = "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........##................###.........##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................###############################";
 /*################.............##.............##.............##.............##.............##.............##.............##.............################*/
+/*
+##############################
+#...#...#...#....#.#.........#
+#...#...#...#....#.#.........#
+#...##.###.#######.###########
+#.............#........#.....#
+#............................#
+#.............#........#.....#
+#...##.###.#######.#######.###
+#...#...#.....#..#.#.........#
+#...#...#.....#..#.#.........#
+###############..#.#.........#
+#................###.........#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+##############################
+*/
+int largeur,hauteur;//width and height in french. Cant use those words because they are reserved for Processing
 
 //Debug
 int frame;
@@ -65,19 +100,17 @@ void setBoolMove(int keyNumb, boolean b){
 }
 
 
-
-
 void setup(){
   frameRate(35); //Like Doom, doom works in 35 tics
   size(1280,720);
   //fullScreen();
   //noCursor();
   background(0,0,0);
-  px=8;
-  py=1.5;
+  px=5;
+  py=2;
   pz=0;
-  largeur=15;
-  hauteur=10;
+  largeur=30;
+  hauteur=30;
 }
 
 void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
@@ -104,6 +137,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     float rayAngle = (playerAngle - fov/2) + ( (float)i / (float)width) * fov;
     float distanceToTheWall = 0;
     boolean rayHitWall = false;
+    boolean isAnEdge=false;
     //float recti=0;
     float eyeX = sin(rayAngle);
     float eyeY = cos(rayAngle);
@@ -115,12 +149,18 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
       rayTestY = (int)(py + eyeY * distanceToTheWall);
       
       if(rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur){
-          rayHitWall =true; //No need to continue, because there is no wall to hit  
+          rayHitWall = true; //No need to continue, because there is no wall to hit  
           distanceToTheWall = depthOfView;
-          println("A");
       }else{
         if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
             rayHitWall = true;
+            
+            if((rayTestX-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= rayTestX+INTEPSILON) || ((rayTestX+1)-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= (rayTestX+1)+INTEPSILON) ){
+              if((rayTestY-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= rayTestY+INTEPSILON) || ((rayTestY+1)-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= (rayTestY+1)+INTEPSILON) ){
+                isAnEdge=true;
+              }
+            }
+           
         }
       }
     }
@@ -138,7 +178,12 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     halfWallHeight=clamp(halfWallHeight,0,height);
 
     for(int j=halfWallHeight;j<height-halfWallHeight;j++){ //So, for each column, we draw pixel column of the wall
-      pixels[j*width+i]=color(nuance);
+      if(isAnEdge){
+        pixels[j*width+i]=color(0,255,0);
+      }
+      else{
+        pixels[j*width+i]=color(nuance);
+      }
     }   
   }
   updatePixels();  
@@ -264,4 +309,3 @@ void mousePressed(){
 void mouseReleased(){
   bIsFiring=false;
 }
-
