@@ -3,9 +3,11 @@ import java.awt.AWTException;
 import java.awt.Point;
 import java.awt.MouseInfo;
  
+ 
+ 
 float px,py,pz,playerAngle;
 float fov = PI/4.0f;
-float depthOfView = 16.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
+float depthOfView = 32.0f; //because we have 15 in width,buut if there is no wall bounderies, we can limit the compute cost.
 
 
 int rayTestX;
@@ -13,7 +15,7 @@ int rayTestY;
 
 //CONST
 float SPEED = 0.65f;
-float INTEPSILON = 0.0075f;
+float INTEPSILON = 0.01f;
 
 //Mouse support
 int oldMouseX=0;
@@ -26,6 +28,10 @@ boolean bLeft,bRight,bForward,bBackward;
 
 boolean bIsFiring;
 
+
+//Texture
+
+PImage texture;
 
 //Maps
 String map = "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........##................###.........##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................###############################";
@@ -42,12 +48,12 @@ String map = "###############################...#...#...#....#.#.........##...#.
 #...#...#.....#..#.#.........#
 #...#...#.....#..#.#.........#
 ###############..#.#.........#
-#................###.........#
-#............................#
-#............................#
-#............................#
-#............................#
-#............................#
+####################.........#
+#.....#.......#..............#
+#.....#.......#..............#
+#.....#......................#
+#.....#.......#..............#
+###.####################.#####
 #............................#
 #............................#
 #............................#
@@ -111,10 +117,11 @@ void setup(){
   pz=0;
   largeur=30;
   hauteur=30;
+  texture = loadImage("WOLF9.png");
 }
 
 void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
-
+  
   //DRAWING
   //
   //
@@ -143,8 +150,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     float eyeY = cos(rayAngle);
     
     while(!rayHitWall && distanceToTheWall < depthOfView){
-      distanceToTheWall += 0.001f;
-      
+      distanceToTheWall += 0.0075f;
       rayTestX = (int)(px + eyeX * distanceToTheWall);
       rayTestY = (int)(py + eyeY * distanceToTheWall);
       
@@ -155,9 +161,9 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
         if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
             rayHitWall = true;
             
-            if((rayTestX-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= rayTestX+INTEPSILON) || ((rayTestX+1)-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= (rayTestX+1)+INTEPSILON) ){
-              if((rayTestY-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= rayTestY+INTEPSILON) || ((rayTestY+1)-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= (rayTestY+1)+INTEPSILON) ){
-                isAnEdge=true;
+            if(  (rayTestX-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= rayTestX+INTEPSILON) || ((rayTestX+1)-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= (rayTestX+1)+INTEPSILON)  ){
+              if(!(rayTestY-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= rayTestY+INTEPSILON) || !((rayTestY+1)-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= (rayTestY+1)+INTEPSILON)  ){     
+                  isAnEdge=true;
               }
             }
            
@@ -174,21 +180,37 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
     
     //We draw the ray (the wall in fact)
     int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
-    float nuance =(15-distanceToTheWall-2)*255/15; 
     halfWallHeight=clamp(halfWallHeight,0,height);
 
-    for(int j=halfWallHeight;j<height-halfWallHeight;j++){ //So, for each column, we draw pixel column of the wall
-      if(isAnEdge){
-        pixels[j*width+i]=color(0,255,0);
-      }
-      else{
-        pixels[j*width+i]=color(nuance);
-      }
+    for(int m=halfWallHeight;m<height-halfWallHeight;m++){ //So, for each column, we draw pixel column of the wall
+        int n=m-halfWallHeight;
+
+        //println(abs((px + eyeX * distanceToTheWall)-floor(px + eyeX * distanceToTheWall))*128);
+        //println(abs((py + eyeY * distanceToTheWall)-floor(py + eyeY * distanceToTheWall))*128);
+        int pixelToAccessY=n*texture.height/(height-2*halfWallHeight);
+        
+        //pixelToAccessY=clamp(pixelToAccessY,0,127);
+        
+        int pixelToAccessX=(int) ( (ceil(py + eyeY * distanceToTheWall)-(py + eyeY * distanceToTheWall) ) *127);
+        if(pixelToAccessX<0){
+          exit();
+          pixelToAccessX=+127;
+        }
+        int pixelToAccessX2=(int) ( (ceil(px + eyeX * distanceToTheWall)-(px + eyeX * distanceToTheWall) ) *127);
+        //println(pixelToAccessX+ "  ;  " +pixelToAccessX2);
+        int pixelToAccess=0;
+
+        if( isAnEdge ){
+          pixelToAccess=pixelToAccessY*texture.width+pixelToAccessX;
+          //println(pixelToAccessX);
+        }else{
+          pixelToAccess=pixelToAccessY*texture.width+pixelToAccessX2;
+        }
+        pixels[m*width+i]=texture.pixels[pixelToAccess];
     }   
   }
   updatePixels();  
-  
-  
+
   
   
   //Mouse support, only 1 axis 
