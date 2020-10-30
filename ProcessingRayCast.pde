@@ -32,10 +32,11 @@ boolean bIsFiring;
 //Texture
 
 PImage texture;
+PImage[] textureList = new PImage[3];
 
 //Maps
-String map = "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........##................###.........##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................##............................###############################";
-/*################.............##.............##.............##.............##.............##.............##.............##.............################*/
+String map= "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........#####################.........##.....#.......#..............##.....#.......#..............##.....#......................##.....#.......#..............####.####################.######......................W.W...##......................W.W...##......................M.M...##......................M.M...##............................##............................##............................##............................##............................##............................##............................##............................###############################;/*################.............##.............##.............##.............##.............##.............##.............##.............################";
+
 /*
 ##############################
 #...#...#...#....#.#.........#
@@ -54,10 +55,10 @@ String map = "###############################...#...#...#....#.#.........##...#.
 #.....#......................#
 #.....#.......#..............#
 ###.####################.#####
-#............................#
-#............................#
-#............................#
-#............................#
+#......................W.W...#
+#......................W.W...#
+#......................M.M...#
+#......................M.M...#
 #............................#
 #............................#
 #............................#
@@ -117,110 +118,117 @@ void setup(){
   pz=0;
   largeur=30;
   hauteur=30;
-  texture = loadImage("WOLF9.png");
+  texture = loadImage("WOLF9.png");//Default
+  textureList[0] = loadImage("WOLF9.png");
+  textureList[1] = loadImage("WOLF1.png");
+  textureList[2] = loadImage("WOLF5.png");
 }
 
-void draw(){ //Let's draw floor and ceiling first, so we just have to cast the rails to do the walls
-  
-  //DRAWING
-  //
-  //
-  //
-  //
-  //
-  //
+void draw(){ 
+
   
   
+  
+
+  
+  
+  ScreenDraw();
+  mouseCatcher();
+  playerMovement();
+ 
+}
+
+
+//Drawing
+void ScreenDraw(){
   loadPixels();
-  for(int j=0;j<width;j++){
-    for(int k=0;k<(height/2-1);k++){
-      pixels[k*width+j]=color(8,16,(height/2-k)*240/(height/2));
-      pixels[(k+height/2)*width+j]=color( 255-(height/2-k)*240/(height/2)   ,0,0);
-    }
-  }
   //Raycast
   strokeWeight(1);
-  for(int i=0;i<width;i++){
+  for(int i=0;i<width;i++){ //Ray 
     float rayAngle = (playerAngle - fov/2) + ( (float)i / (float)width) * fov;
     float distanceToTheWall = 0;
     boolean rayHitWall = false;
-    boolean isAnEdge=false;
-    //float recti=0;
     float eyeX = sin(rayAngle);
     float eyeY = cos(rayAngle);
-    
+    float sampleX=0;
+    float sampleY=0;
+    //by default
     while(!rayHitWall && distanceToTheWall < depthOfView){
       distanceToTheWall += 0.0075f;
       rayTestX = (int)(px + eyeX * distanceToTheWall);
       rayTestY = (int)(py + eyeY * distanceToTheWall);
-      
+      char wallType=map.charAt(rayTestY *  largeur + rayTestX);
       if(rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur){
           rayHitWall = true; //No need to continue, because there is no wall to hit  
           distanceToTheWall = depthOfView;
       }else{
-        if(map.charAt(rayTestY *  largeur + rayTestX) == '#'){
-            rayHitWall = true;
-            
-            if(  (rayTestX-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= rayTestX+INTEPSILON) || ((rayTestX+1)-INTEPSILON <= px+eyeX*distanceToTheWall && px+eyeX*distanceToTheWall <= (rayTestX+1)+INTEPSILON)  ){
-              if(!(rayTestY-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= rayTestY+INTEPSILON) || !((rayTestY+1)-INTEPSILON <= py+eyeY*distanceToTheWall && py+eyeY*distanceToTheWall <= (rayTestY+1)+INTEPSILON)  ){     
-                  isAnEdge=true;
-              }
+        if(wallType == '#' || wallType == 'W' || wallType == 'M'){
+          
+            switch(wallType){
+              case '#':
+                texture = textureList[0];
+                break;
+              case 'W':
+                texture = textureList[1];
+                break;
+              case 'M':
+                texture = textureList[2];
+                break;
+              default:
+                texture = textureList[0];
             }
-           
+          
+            rayHitWall = true;      
+            float posMidX = (float)rayTestX + 0.5f;
+            float posMidY = (float)rayTestY + 0.5f;
+            float fTestAngle = atan2((py + eyeY * distanceToTheWall - posMidY), (px + eyeX * distanceToTheWall - posMidX));
+            
+            if (fTestAngle >= -PI * 0.25f && fTestAngle < PI * 0.25f)
+              sampleX = posMidY - (py + eyeY * distanceToTheWall);
+            if (fTestAngle >= PI * 0.25f && fTestAngle < PI * 0.75f)
+              sampleX = posMidX - (px + eyeX * distanceToTheWall);
+            if (fTestAngle < -PI * 0.25f && fTestAngle >= -PI * 0.75f)
+              sampleX = posMidX - (px + eyeX * distanceToTheWall);
+            if (fTestAngle >= PI * 0.75f || fTestAngle < -PI * 0.75f)
+              sampleX = posMidY - (py + eyeY * distanceToTheWall);
+          
+          sampleX=sampleX*texture.width;
+          sampleX=(int)sampleX;
+          while(sampleX<0){
+            sampleX+=texture.width;
+          }
         }
       }
     }
     distanceToTheWall*=cos(rayAngle-playerAngle); //Tried to limit the fisheye effect
-    /*
-    if(distanceToTheWall<=1.0f){ //So because of the way I render the wall, when you are near the wall, its very heavy on the compute, so we dont hit 35tics per seconds, so a quick fix I did is to multiply the rotate by 4 when its lagging so we can get the view out of there faster.
-      lagMultiplier=4.0f;
-    }else{
-      lagMultiplier=1.0f;
-    }*/
     
-    //We draw the ray (the wall in fact)
     int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
-    halfWallHeight=clamp(halfWallHeight,0,height);
-
-    for(int m=halfWallHeight;m<height-halfWallHeight;m++){ //So, for each column, we draw pixel column of the wall
-        int n=m-halfWallHeight;
-
-        //println(abs((px + eyeX * distanceToTheWall)-floor(px + eyeX * distanceToTheWall))*128);
-        //println(abs((py + eyeY * distanceToTheWall)-floor(py + eyeY * distanceToTheWall))*128);
-        int pixelToAccessY=n*texture.height/(height-2*halfWallHeight);
-        
-        //pixelToAccessY=clamp(pixelToAccessY,0,127);
-        
-        int pixelToAccessX=(int) ( (ceil(py + eyeY * distanceToTheWall)-(py + eyeY * distanceToTheWall) ) *127);
-        if(pixelToAccessX<0){
-          exit();
-          pixelToAccessX=+127;
+  
+    for(int pixelY=0;pixelY<height;pixelY++){
+      if(pixelY<halfWallHeight){ //Ceiling drawing
+        pixels[pixelY*width+i]=color(75,75,75);
+      }else if(pixelY>halfWallHeight && pixelY<height-halfWallHeight){
+        sampleY = ((float)pixelY - (float)halfWallHeight) / ((float)height-halfWallHeight - (float)halfWallHeight);
+        sampleY*=texture.height;
+        sampleY=(int)sampleY;
+        while(sampleY<0){
+          sampleY+=texture.height;
         }
-        int pixelToAccessX2=(int) ( (ceil(px + eyeX * distanceToTheWall)-(px + eyeX * distanceToTheWall) ) *127);
-        //println(pixelToAccessX+ "  ;  " +pixelToAccessX2);
-        int pixelToAccess=0;
-
-        if( isAnEdge ){
-          pixelToAccess=pixelToAccessY*texture.width+pixelToAccessX;
-          //println(pixelToAccessX);
-        }else{
-          pixelToAccess=pixelToAccessY*texture.width+pixelToAccessX2;
-        }
-        pixels[m*width+i]=texture.pixels[pixelToAccess];
-    }   
+        int a=texture.pixels[(int)(sampleY*texture.width)+(int)sampleX];
+        pixels[pixelY*width+i]=a;
+      }else{ //Floor drawing
+        pixels[pixelY*width+i]=color(55,55,55);
+      }
+    }
   }
   updatePixels();  
+}
 
-  
-  
-  //Mouse support, only 1 axis 
-  //
-  //
-  //
-  //
-  //
-  
-  
+
+
+
+//Mouse support, only 1 axis 
+void mouseCatcher(){  
   float mouseXAcceleration=0;
   MouseInfo.getPointerInfo();
   Point pt = MouseInfo.getPointerInfo().getLocation();
@@ -253,7 +261,6 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   catch (AWTException e) {}
   
   if(!wasOut){
-    //if((mouseXAcceleration < 0 && oldAcceleration < 0) || (mouseXAcceleration > 0 && oldAcceleration > 0))
       playerAngle+=mouseXAcceleration;
   }else{
     if(absMouseX<windowX){
@@ -265,19 +272,16 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   oldMouseX=absMouseX;
   oldAcceleration=mouseXAcceleration;
   wasOut=false;
-  
-  
-  //PLAYER MOVEMENTS
-  //
-  //
-  //
-  //
-  //
-  
+}
+
+
+
+ //PLAYER MOVEMENTS
+void playerMovement(){  
   if(bLeft){
       px-= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       py-= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+      if(map.charAt((int)py*largeur+ (int)px) != '.'){
         px+= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
         py+= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       }
@@ -285,7 +289,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   if(bRight){
       px+= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       py+= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
-      if(map.charAt((int)py*largeur+ (int)px) == '#'){
+      if(map.charAt((int)py*largeur+ (int)px) != '.'){
         px-= 0.2f*sin(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
         py-= 0.2f*cos(playerAngle+(90.0f*3.14159f/180.0))*SPEED;
       }
@@ -293,7 +297,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   if(bForward){
     px+= 0.2f*sin(playerAngle)*SPEED;
     py+= 0.2f*cos(playerAngle)*SPEED;
-    if(map.charAt((int)py*largeur+ (int)px) == '#'){
+    if(map.charAt((int)py*largeur+ (int)px) != '.'){
       px-= 0.2f*sin(playerAngle)*SPEED;
       py-= 0.2f*cos(playerAngle)*SPEED;
     }
@@ -301,7 +305,7 @@ void draw(){ //Let's draw floor and ceiling first, so we just have to cast the r
   if(bBackward){
     px-= 0.2f*sin(playerAngle)*SPEED;
     py-= 0.2f*cos(playerAngle)*SPEED;
-    if(map.charAt((int)py*largeur+ (int)px) == '#'){
+    if(map.charAt((int)py*largeur+ (int)px) != '.'){
       px+= 0.2f*sin(playerAngle)*SPEED;
       py+= 0.2f*cos(playerAngle)*SPEED;
     }
