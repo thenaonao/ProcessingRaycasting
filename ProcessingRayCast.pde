@@ -29,29 +29,32 @@ boolean bIsFiring;
 //Texture
 
 PImage texture;
-PImage[] textureList = new PImage[3];
+PImage[] textureList = new PImage[4];
 
 //Maps
-String map= "###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##.###.#######.############.............#........#.....##............................##.............#........#.....##...##.###.#######.#######.####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........#####################.........##.....#.......#..............##.....#.......#..............##.....#......................##.....#.......#..............####.####################.######......................W.W...##......................W.W...##......................M.M...##......................M.M...##............................##............................##............................##............................##............................##............................##............................##............................###############################;/*################.............##.............##.............##.............##.............##.............##.............##.............################";
+String map= 
+"###############################...#...#...#....#.#.........##...#...#...#....#.#.........##...##-###-#######.############.............#........#.....##.............|........|.....##.............#........#.....##...##.###.#######.#######-####...#...#.....#..#.#.........##...#...#.....#..#.#.........################..#.#.........#####################.........##.....#.......#..............##.....#.......#..............##.....#.......|..............##.....#.......#..............####-####################.######......................W.W...##......................W.W...##......................M.M...##......................M.M...##............................##............................##............................##............................##............................##............................##............................##............................###############################";
+
+
 
 /*
  ##############################
  #...#...#...#....#.#.........#
  #...#...#...#....#.#.........#
- #...##.###.#######.###########
+ #...##-###-#######.###########
  #.............#........#.....#
- #............................#
+ #.............|........|.....#
  #.............#........#.....#
- #...##.###.#######.#######.###
+ #...##.###.#######.#######-###
  #...#...#.....#..#.#.........#
  #...#...#.....#..#.#.........#
  ###############..#.#.........#
  ####################.........#
  #.....#.......#..............#
  #.....#.......#..............#
- #.....#......................#
+ #.....#.......|..............#
  #.....#.......#..............#
- ###.####################.#####
+ ###-####################.#####
  #......................W.W...#
  #......................W.W...#
  #......................M.M...#
@@ -116,6 +119,7 @@ void setup() {
   textureList[0] = loadImage("WOLF9.png");
   textureList[1] = loadImage("WOLF1.png");
   textureList[2] = loadImage("WOLF5.png");
+  textureList[3] = loadImage("WOLF10.png");
 }
 
 //We can consider this as the  gameloop
@@ -151,42 +155,62 @@ void ScreenDraw() {
         rayHitWall = true; //No need to continue, because there is no wall to hit  
         distanceToTheWall = depthOfView;
       } else {
-        
-        if (wallType == '#' || wallType == 'W' || wallType == 'M') {
+        //If we hit something else than a .
+        if (wallType != '.') {
 
           switch(wallType) {
-          case '#':
-            texture = textureList[0];
-            break;
-          case 'W':
-            texture = textureList[1];
-            break;
-          case 'M':
-            texture = textureList[2];
-            break;
-          default:
-            texture = textureList[0];
+            case '#':
+              texture = textureList[0];
+              break;
+            case 'W':
+              texture = textureList[1];
+              break;
+            case 'M':
+              texture = textureList[2];
+              break;
+            case '-':
+            case '|':
+              texture = textureList[3];
+              break;
+            default:
+              texture = textureList[0];
           }
 
-          rayHitWall = true;      
+          rayHitWall = true; 
+          //if its a door, then we add 0.5f in the correct direction
+          /*if(wallType=='-'){
+            rayTestY+=0.5f;
+          }else if(wallType=='|'){
+            rayTestX+=0.5f;
+          }*/
+          
+          
+          
           float posMidX = (float)rayTestX + 0.5f;
           float posMidY = (float)rayTestY + 0.5f;
           float fTestAngle = atan2((p1.playerY + eyeY * distanceToTheWall - posMidY), (p1.playerX + eyeX * distanceToTheWall - posMidX));
 
-          if (fTestAngle >= -PI * 0.25f && fTestAngle < PI * 0.25f)
+          if (fTestAngle >= -PI * 0.25f && fTestAngle < PI * 0.25f){
             sampleX = posMidY - (p1.playerY + eyeY * distanceToTheWall);
-          if (fTestAngle >= PI * 0.25f && fTestAngle < PI * 0.75f)
+            sampleX*=-1;
+          }
+          if (fTestAngle >= PI * 0.25f && fTestAngle < PI * 0.75f){
             sampleX = posMidX - (p1.playerX + eyeX * distanceToTheWall);
-          if (fTestAngle < -PI * 0.25f && fTestAngle >= -PI * 0.75f)
+          }
+          if (fTestAngle < -PI * 0.25f && fTestAngle >= -PI * 0.75f){
             sampleX = posMidX - (p1.playerX + eyeX * distanceToTheWall);
-          if (fTestAngle >= PI * 0.75f || fTestAngle < -PI * 0.75f)
+            sampleX*=-1;
+          }
+          if (fTestAngle >= PI * 0.75f || fTestAngle < -PI * 0.75f){
             sampleX = posMidY - (p1.playerY + eyeY * distanceToTheWall);
+          }
 
-          sampleX=sampleX*texture.width;
+          sampleX=sampleX*texture.width+texture.width/2;
           sampleX=(int)sampleX;
           while (sampleX<0) {
             sampleX+=texture.width;
           }
+          println("i: "+i+" ;sampleX: "+sampleX);
         }
       }
     }
@@ -343,7 +367,7 @@ class Player {
     playerY+=y;
     playerZ+=z;
     char currentTest =map.charAt((int)playerY*largeur+ (int)playerX);
-    if(currentTest != '.' && (currentTest != '-' || currentTest != '|')){ //if its just a block/wall
+    if(currentTest != '.' && (currentTest != '-' && currentTest != '|')){ //if its just a block/wall
       playerX-=x;
       playerY-=y;
       playerZ-=z;
