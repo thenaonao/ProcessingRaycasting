@@ -138,7 +138,7 @@ void ScreenDraw() {
   //Raycast
   strokeWeight(1);
   for (int i=0; i<width; i++) { //Ray 
-    float rayAngle = (p1.playerAngle - fov/2) + ( (float)i / (float)width) * fov;
+    float rayAngle = (p1.getPlayerAngle() - fov/2) + ( (float)i / (float)width) * fov;
     float distanceToTheWall = 0;
     boolean rayHitWall = false;
     float eyeX = sin(rayAngle);
@@ -148,15 +148,15 @@ void ScreenDraw() {
     //by default
     while (!rayHitWall && distanceToTheWall < depthOfView) {
       distanceToTheWall += 0.0075f;
-      rayTestX = (int)(p1.playerX + eyeX * distanceToTheWall);
-      rayTestY = (int)(p1.playerY + eyeY * distanceToTheWall);
+      rayTestX = (int)(p1.getPlayerX() + eyeX * distanceToTheWall);
+      rayTestY = (int)(p1.getPlayerY() + eyeY * distanceToTheWall);
       char wallType=map.charAt(rayTestY *  largeur + rayTestX);
       if (rayTestX < 0  || rayTestY < 0 || rayTestX >= largeur || rayTestY >=hauteur) {
         rayHitWall = true; //No need to continue, because there is no wall to hit  
         distanceToTheWall = depthOfView;
       } else {
         //If we hit something else than a .
-        if (wallType != '.') {
+        if (wallType != '.' && wallType != '-' && wallType != '|') {
 
           switch(wallType) {
             case '#':
@@ -178,31 +178,27 @@ void ScreenDraw() {
 
           rayHitWall = true; 
           //if its a door, then we add 0.5f in the correct direction
-          /*if(wallType=='-'){
-            rayTestY+=0.5f;
-          }else if(wallType=='|'){
-            rayTestX+=0.5f;
-          }*/
-          
-          
-          
+          if(wallType=='-' || wallType=='|'){
+            distanceToTheWall+=0.5f; 
+          }
+                    
           float posMidX = (float)rayTestX + 0.5f;
           float posMidY = (float)rayTestY + 0.5f;
-          float fTestAngle = atan2((p1.playerY + eyeY * distanceToTheWall - posMidY), (p1.playerX + eyeX * distanceToTheWall - posMidX));
+          float fTestAngle = atan2((p1.getPlayerY() + eyeY * distanceToTheWall - posMidY), (p1.getPlayerX() + eyeX * distanceToTheWall - posMidX));
 
           if (fTestAngle >= -PI * 0.25f && fTestAngle < PI * 0.25f){
-            sampleX = posMidY - (p1.playerY + eyeY * distanceToTheWall);
+            sampleX = posMidY - (p1.getPlayerY() + eyeY * distanceToTheWall);
             sampleX*=-1;
           }
           if (fTestAngle >= PI * 0.25f && fTestAngle < PI * 0.75f){
-            sampleX = posMidX - (p1.playerX + eyeX * distanceToTheWall);
+            sampleX = posMidX - (p1.getPlayerX() + eyeX * distanceToTheWall);
           }
           if (fTestAngle < -PI * 0.25f && fTestAngle >= -PI * 0.75f){
-            sampleX = posMidX - (p1.playerX + eyeX * distanceToTheWall);
+            sampleX = posMidX - (p1.getPlayerX() + eyeX * distanceToTheWall);
             sampleX*=-1;
           }
           if (fTestAngle >= PI * 0.75f || fTestAngle < -PI * 0.75f){
-            sampleX = posMidY - (p1.playerY + eyeY * distanceToTheWall);
+            sampleX = posMidY - (p1.getPlayerY() + eyeY * distanceToTheWall);
           }
 
           sampleX=sampleX*texture.width+texture.width/2;
@@ -210,11 +206,10 @@ void ScreenDraw() {
           while (sampleX<0) {
             sampleX+=texture.width;
           }
-          println("i: "+i+" ;sampleX: "+sampleX);
         }
       }
     }
-    distanceToTheWall*=cos(rayAngle-p1.playerAngle); //Tried to limit the fisheye effect
+    distanceToTheWall*=cos(rayAngle-p1.getPlayerAngle()); //Tried to limit the fisheye effect
 
     int halfWallHeight = (int)((height/2.0) - height / distanceToTheWall);//THIS IS THE GOOD ALGORYTHM!!! OH FFS    
 
@@ -289,23 +284,23 @@ void mouseCatcher() {
 void playerMovement(){
   float mx=0,my=0,mz=0;
   if (bLeft) {
-    mx = -0.2f*sin(p1.playerAngle+(90.0f*3.14159f/180.0))*SPEED;
-    my = -0.2f*cos(p1.playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+    mx = -0.2f*sin(p1.getPlayerAngle()+(90.0f*3.14159f/180.0))*SPEED;
+    my = -0.2f*cos(p1.getPlayerAngle()+(90.0f*3.14159f/180.0))*SPEED;
     p1.move(mx,my,mz);
   }
   if (bRight) {
-    mx = 0.2f*sin(p1.playerAngle+(90.0f*3.14159f/180.0))*SPEED;
-    my = 0.2f*cos(p1.playerAngle+(90.0f*3.14159f/180.0))*SPEED;
+    mx = 0.2f*sin(p1.getPlayerAngle()+(90.0f*3.14159f/180.0))*SPEED;
+    my = 0.2f*cos(p1.getPlayerAngle()+(90.0f*3.14159f/180.0))*SPEED;
     p1.move(mx,my,mz);
   }
   if (bForward) {
-    mx = 0.2f*sin(p1.playerAngle)*SPEED;
-    my = 0.2f*cos(p1.playerAngle)*SPEED;
+    mx = 0.2f*sin(p1.getPlayerAngle())*SPEED;
+    my = 0.2f*cos(p1.getPlayerAngle())*SPEED;
     p1.move(mx,my,mz);
   }
   if (bBackward) {
-    mx = -0.2f*sin(p1.playerAngle)*SPEED;
-    my = -0.2f*cos(p1.playerAngle)*SPEED;
+    mx = -0.2f*sin(p1.getPlayerAngle())*SPEED;
+    my = -0.2f*cos(p1.getPlayerAngle())*SPEED;
     p1.move(mx,my,mz);
   }
 }
@@ -361,7 +356,12 @@ class Player {
     playerZ=z;
     playerAngle=0;
   }
-  
+  Player(int x, int y,int z, float angle){
+    playerX=x;
+    playerY=y;
+    playerZ=z;
+    playerAngle=angle;
+  }
   void move(float x,float y,float z){
     playerX+=x;
     playerY+=y;
@@ -380,5 +380,52 @@ class Player {
     playerAngle+= angle;
   }
   
+  float getPlayerX(){
+    return playerX;
+  }
   
+  float getPlayerY(){
+    return playerY;
+  }
+  float getPlayerZ(){
+    return playerZ;
+  }
+  float getPlayerAngle(){
+    return playerAngle;
+  }
+}
+
+class Level {
+  String currentLevel = "";
+  int mapWidth;
+  int mapHeight;
+  int mapDepth;
+  
+  void changeLevel(int numb){
+    currentLevel="a";
+  }
+  
+}
+
+class Block {
+  boolean isSolid;
+  Block(boolean solid){
+    isSolid=solid;
+  }
+  boolean getSolidState(){
+    return isSolid;
+  }
+}
+
+class Wall extends Block {
+  Wall(){
+    super(true);
+  }
+}
+class Door extends Block {
+  int dir;
+  Door(int orientation){
+    super(false);
+    dir=orientation;
+  }
 }
